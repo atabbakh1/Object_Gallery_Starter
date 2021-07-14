@@ -32,23 +32,20 @@ public class PlayerMovement : MonoBehaviourPun
 
     private void Start()
     {
-
         if (selectedOptionIndex == 0)
         {
-            if (gameObject.GetComponent<CharacterController>() == null)
+            if(photonView.IsMine)
             {
-                characterController = gameObject.AddComponent<CharacterController>();
-            }
-            else
-            {
-                characterController = gameObject.GetComponent<CharacterController>();
+                characterController = this.gameObject.AddComponent<CharacterController>();
             }
         }
+
         unClickedRotation = transform.eulerAngles;
     }
     void Update()
     {
 
+        //turn off cameras that don't belong to me
         if (photonView.IsMine == false && PhotonNetwork.IsConnected == true)
         {
             if (photonView.gameObject.GetComponentInChildren<Camera>() != null)
@@ -57,130 +54,136 @@ public class PlayerMovement : MonoBehaviourPun
             }
         }
 
-        #region MOUSE ORBITTING
-
-        if (Input.GetMouseButton(1) || Input.GetMouseButton(2)) // right and middle click only 
+        if(photonView.IsMine)
         {
-            lastMouse = Input.mousePosition - lastMouse;
-            lastMouse = new Vector3(-lastMouse.y * camSensitivity, lastMouse.x * camSensitivity, 0);
-            lastMouse = new Vector3(transform.eulerAngles.x + lastMouse.x, transform.eulerAngles.y + lastMouse.y, 0);
-            transform.eulerAngles = lastMouse;
-            unClickedRotation = lastMouse;
-        }
-        else
-        {
-            transform.eulerAngles = unClickedRotation;
-        }
-        lastMouse = Input.mousePosition;
+            #region MOUSE ORBITTING
 
-        #endregion
-
-        #region CHARACTER MOVEMENT
-
-        //if character movement
-        if (selectedOptionIndex == 0)
-        {
-            if (characterController)
+            if (Input.GetMouseButton(1) || Input.GetMouseButton(2)) // right and middle click only 
             {
-                if (characterController.enabled == false)
+                lastMouse = Input.mousePosition - lastMouse;
+                lastMouse = new Vector3(-lastMouse.y * camSensitivity, lastMouse.x * camSensitivity, 0);
+                lastMouse = new Vector3(transform.eulerAngles.x + lastMouse.x, transform.eulerAngles.y + lastMouse.y, 0);
+                transform.eulerAngles = lastMouse;
+                unClickedRotation = lastMouse;
+            }
+            else
+            {
+                transform.eulerAngles = unClickedRotation;
+            }
+            lastMouse = Input.mousePosition;
+
+            #endregion
+
+
+            #region CHARACTER MOVEMENT
+
+            //if character movement
+            if (selectedOptionIndex == 0)
+            {
+
+                if (characterController)
                 {
-                    characterController.enabled = true;
+                    if (characterController.enabled == false)
+                    {
+                        characterController.enabled = true;
+                    }
+
+                    characterRadius = Mathf.Clamp(characterRadius, 0.02f, 1f);
+                    characterController.radius = characterRadius;
+                    characterController.height = characterHeight;
+
+                    isGrounded = characterController.isGrounded;
+
+                    if (isGrounded && velocity.y < 0)
+                    {
+                        velocity.y = 0f;
+                    }
+
+                    float x = Input.GetAxis("Horizontal");
+                    float z = Input.GetAxis("Vertical");
+                    Vector3 moveDirection = transform.right * x + transform.forward * z;
+
+
+                    //accerlerate if LeftShift is pressed
+                    if (Input.GetKey(KeyCode.LeftShift))
+                    {
+                        characterController.Move(moveDirection * movementSpeed * speedMultiplier * Time.deltaTime);
+                    }
+                    else
+                    {
+                        characterController.Move(moveDirection * movementSpeed * Time.deltaTime);
+                    }
+
+                    // changes the height position of the player..
+                    if (Input.GetButtonDown("Jump") && isGrounded)
+                    {
+                        velocity.y += Mathf.Sqrt(jumpHeight * -3.0f * gravity);
+                    }
+
+                    //aligns the Y axis of the player as it moves to the normal of the mesh
+                    if (alignToMesh)
+                    {
+                        RaycastHit hit;
+                        Ray downRay = new Ray(transform.position, -Vector3.up);
+
+                        if (Physics.Raycast(downRay, out hit))
+                        {
+                            transform.rotation = Quaternion.FromToRotation(transform.up, hit.normal) * transform.rotation;
+                        }
+                    }
+
+                    //bring down the velocity to the ground 
+                    velocity.y += gravity * Time.deltaTime;
+                    characterController.Move(velocity * Time.deltaTime);
+
+                }
+            }
+
+            #endregion
+
+
+            #region FLYTHROUGH MOVEMENT
+
+            //if flythrough movement
+            else
+            {
+                if (characterController)
+                {
+                    if (characterController.enabled == true)
+                        characterController.enabled = false;
                 }
 
-                characterRadius = Mathf.Clamp(characterRadius, 0.02f, 1f);
-                characterController.radius = characterRadius;
-                characterController.height = characterHeight;
+                Vector3 p = GetBaseInput();
 
-                isGrounded = characterController.isGrounded;
-
-                if (isGrounded && velocity.y < 0)
+                if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.Space))
                 {
-                    velocity.y = 0f;
-                }
-
-                float x = Input.GetAxis("Horizontal");
-                float z = Input.GetAxis("Vertical");
-                Vector3 moveDirection = transform.right * x + transform.forward * z;
-
-
-                //accerlerate if LeftShift is pressed
-                if (Input.GetKey(KeyCode.LeftShift))
-                {
-                    characterController.Move(moveDirection * movementSpeed * speedMultiplier * Time.deltaTime);
+                    p = p * speedMultiplier;
                 }
                 else
                 {
-                    characterController.Move(moveDirection * movementSpeed * Time.deltaTime);
+                    p = p * movementSpeed;
                 }
 
-                // changes the height position of the player..
-                if (Input.GetButtonDown("Jump") && isGrounded)
+                p = p * Time.deltaTime;
+                Vector3 newPosition = transform.position;
+
+                transform.Translate(p);
+
+                if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E))
                 {
-                    velocity.y += Mathf.Sqrt(jumpHeight * -3.0f * gravity);
+                    newPosition.y = transform.position.y;
                 }
-
-                //aligns the Y axis of the player as it moves to the normal of the mesh
-                if (alignToMesh)
+                else
                 {
-                    RaycastHit hit;
-                    Ray downRay = new Ray(transform.position, -Vector3.up);
-
-                    if (Physics.Raycast(downRay, out hit))
-                    {
-                        transform.rotation = Quaternion.FromToRotation(transform.up, hit.normal) * transform.rotation;
-                    }
+                    newPosition.x = transform.position.x;
+                    newPosition.z = transform.position.z;
                 }
 
-                //bring down the velocity to the ground 
-                velocity.y += gravity * Time.deltaTime;
-                characterController.Move(velocity * Time.deltaTime);
-
+                transform.position = newPosition;
             }
+            #endregion
         }
 
-        #endregion
-
-        #region FLYTHROUGH MOVEMENT
-
-        //if flythrough movement
-        else
-        {
-            if (characterController)
-            {
-                if (characterController.enabled == true)
-                    characterController.enabled = false;
-            }
-
-            Vector3 p = GetBaseInput();
-
-            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.Space))
-            {
-                p = p * speedMultiplier;
-            }
-            else
-            {
-                p = p * movementSpeed;
-            }
-
-            p = p * Time.deltaTime;
-            Vector3 newPosition = transform.position;
-
-            transform.Translate(p);
-
-            if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E))
-            {
-                newPosition.y = transform.position.y;
-            }
-            else
-            {
-                newPosition.x = transform.position.x;
-                newPosition.z = transform.position.z;
-            }
-
-            transform.position = newPosition;
-        }
-
-        #endregion
 
     }
 

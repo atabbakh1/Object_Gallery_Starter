@@ -283,8 +283,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 590002331}
-        m_TargetAssemblyTypeName: MultiplayerLauncher, Assembly-CSharp
-        m_MethodName: JoinRoomClicked
+        m_TargetAssemblyTypeName: Photon.Pun.Demo.PunBasics.MultiplayerLauncher,
+          Assembly-CSharp
+        m_MethodName: JoinRoom
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -529,13 +530,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dceaca767eca224897567881d9aaf3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameVersion: 0.0.1
-  debugText: {fileID: 1909898734}
-  roomSetupUI: {fileID: 1591104591}
-  joinRoomButton: {fileID: 442949731}
+  UISetup: {fileID: 1591104591}
+  statusLog: {fileID: 1909898734}
+  maxPlayerCount: 20
   sceneToLoad: MainScene
-  roomName: ProjectTitle
-  maxPlayersPerRoom: 15
+  roomName: ObjectGallery
+  joinRoomButton: {fileID: 442949731}
 --- !u!4 &590002332
 Transform:
   m_ObjectHideFlags: 0
