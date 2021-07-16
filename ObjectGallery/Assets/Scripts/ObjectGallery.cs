@@ -16,6 +16,7 @@ public class ObjectGallery : MonoBehaviour
     [HideInInspector]
     public GameObject prefabeToPlace;
     public int maxPlacementDistance = 20;
+    public bool alignToMesh;
 
     [Space(20)]
     public GameObject objectCategoryPanel;
@@ -33,6 +34,8 @@ public class ObjectGallery : MonoBehaviour
     private bool objectGalleryPanelActive = false;
     private bool placingPrompted = false;
 
+
+
     private void Start()
     {
         //turn both panels off on start
@@ -41,8 +44,6 @@ public class ObjectGallery : MonoBehaviour
 
         UpdateNavigationButtons(selectedObjectIndex);
     }
-
-
 
     public void CategoryPanelSwitcher()
     {
@@ -102,6 +103,8 @@ public class ObjectGallery : MonoBehaviour
                 selectedCategoryObjects = categoryCObjects;
                 break;
         }
+
+                
 
         //turn off the category panel once selection is made
         objectCategoryPanel.SetActive(false);
@@ -219,7 +222,14 @@ public class ObjectGallery : MonoBehaviour
         if (Physics.Raycast(ray, out hit, maxPlacementDistance))
         {
             positions[0] = hit.point;
-            positions[1] = hit.normal;
+            if(alignToMesh)
+            {
+                positions[1] = hit.normal;
+            }
+            else
+            {
+                positions[1] = Vector3.zero;
+            }
         }
         return positions;
     }
