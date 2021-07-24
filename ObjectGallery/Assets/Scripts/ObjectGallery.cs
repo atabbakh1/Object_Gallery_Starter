@@ -17,6 +17,8 @@ public class ObjectGallery : MonoBehaviour
     public GameObject prefabeToPlace;
     public int maxPlacementDistance = 20;
     public bool alignToMesh;
+    public LayerMask placeableObjectLayer;
+
 
     [Space(20)]
     public GameObject objectCategoryPanel;
@@ -33,8 +35,8 @@ public class ObjectGallery : MonoBehaviour
     private bool categoryPanelActive = false;
     private bool objectGalleryPanelActive = false;
     private bool placingPrompted = false;
-
-
+    private GameObject currentPlaceableObject;
+    private float mouseWheel;
 
     private void Start()
     {
@@ -182,7 +184,6 @@ public class ObjectGallery : MonoBehaviour
     }
 
 
-
     public void PlaceButtonClicked()
     {
         placingPrompted = true;
@@ -195,43 +196,59 @@ public class ObjectGallery : MonoBehaviour
 
     private void Update()
     {
+
+        if(Input.GetKeyDown(KeyCode.Escape))
+        {
+            CloseButtonClicked();
+        }
         if(placingPrompted)
         {
-            if (Input.GetMouseButtonDown(0))
+            if(currentPlaceableObject == null)
             {
-                //On left click spawn selected prefab and align its rotation to a surface normal
-                Vector3[] spawnData = GetClickPositionAndNormal();
-                if (spawnData[0] != Vector3.zero)
-                {
-                    GameObject go = Instantiate(prefabeToPlace, spawnData[0], Quaternion.FromToRotation(prefabeToPlace.transform.up, spawnData[1]));
-                    go.name += " _instantiated";
-
-                    objectGalleryPanelActive = false;
-                    categoryPanelActive = false;
-                    placingPrompted = false;
-                }          
+                currentPlaceableObject = Instantiate(prefabeToPlace);
             }
+            if (currentPlaceableObject != null)
+            {
+                MoveCurrentPlacebaleObjectToMouse();
+                RotateFromMouseWheel();
+                ReleaseObject();
+
+            }
+
+        }
+       
+    }
+
+    public void MoveCurrentPlacebaleObjectToMouse()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+        RaycastHit hit;
+        if(Physics.Raycast(ray, out hit, maxPlacementDistance, placeableObjectLayer))
+        {
+            currentPlaceableObject.transform.position = hit.point;
+            if(alignToMesh)
+                currentPlaceableObject.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+
         }
     }
 
-    Vector3[] GetClickPositionAndNormal()
+    public void RotateFromMouseWheel()
     {
-        Vector3[] positions = new Vector3[] { Vector3.zero, Vector3.zero }; //0 = spawn poisiton, 1 = surface normal
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit = new RaycastHit();
-        if (Physics.Raycast(ray, out hit, maxPlacementDistance))
+        mouseWheel = Input.mouseScrollDelta.y;
+        currentPlaceableObject.transform.Rotate(Vector3.up, mouseWheel * 10f);
+    }
+
+    public void ReleaseObject()
+    {
+        if(Input.GetMouseButtonDown(0))
         {
-            positions[0] = hit.point;
-            if(alignToMesh)
-            {
-                positions[1] = hit.normal;
-            }
-            else
-            {
-                positions[1] = Vector3.zero;
-            }
+            currentPlaceableObject = null;
+
+            objectGalleryPanelActive = false;
+            categoryPanelActive = false;
+            placingPrompted = false;
         }
-        return positions;
     }
 }
 

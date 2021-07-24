@@ -1023,6 +1023,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Topo
       objectReference: {fileID: 0}
+    - target: {fileID: 1873548591367054904, guid: fca4d693417257b4985bd452860788b3, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fca4d693417257b4985bd452860788b3, type: 3}
 --- !u!1 &705507993
@@ -1544,6 +1548,10 @@ MonoBehaviour:
     itemName: C 03
   prefabeToPlace: {fileID: 0}
   maxPlacementDistance: 20
+  alignToMesh: 0
+  placeableObjectLayer:
+    serializedVersion: 2
+    m_Bits: 64
   objectCategoryPanel: {fileID: 513993775}
   objectGalleryPanel: {fileID: 1948265896}
   rightButton: {fileID: 1501200506}
